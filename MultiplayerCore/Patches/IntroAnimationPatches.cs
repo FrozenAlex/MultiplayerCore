@@ -56,7 +56,7 @@ namespace MultiplayerCore.Patches
         {
             _iteration++;
             ____introPlayableDirector = _originalDirector!;
-            IEnumerable<IConnectedPlayer> players = ____multiplayerPlayersManager.allActiveAtGameStartPlayers.Where(p => !p.isMe);
+            IEnumerable<IBeatSaberConnectedPlayer> players = ____multiplayerPlayersManager.allActiveAtGameStartPlayers.Where(p => !p.isMe);
             if (_iteration < ((players.Count() + 3) / 4))
                 __instance.PlayIntroAnimation(maxDesiredIntroAnimationDuration, onCompleted);
             else
@@ -74,18 +74,18 @@ namespace MultiplayerCore.Patches
             {
                 if (codes[i].Calls(_getActivePlayersMethod))
                 {
-                    codes[i] = new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => GetActivePlayersAttacher(null!)));
+                    codes[i] = new CodeInstruction(codes[i]) { opcode = OpCodes.Call, operand = SymbolExtensions.GetMethodInfo(() => GetActivePlayersAttacher(null!)) };
                 }
             }
             return codes.AsEnumerable();
         }
 
-        private static IReadOnlyList<IConnectedPlayer> GetActivePlayersAttacher(MultiplayerPlayersManager contract)
+        private static IReadOnlyList<IBeatSaberConnectedPlayer> GetActivePlayersAttacher(MultiplayerPlayersManager contract)
         {
-            IEnumerable<IConnectedPlayer> players = contract.allActiveAtGameStartPlayers.Where(p => !p.isMe);
+            IEnumerable<IBeatSaberConnectedPlayer> players = contract.allActiveAtGameStartPlayers.Where(p => !p.isMe);
             players = players.Skip(_iteration * 4).Take(4);
             if (_iteration == 0 && contract.allActiveAtGameStartPlayers.Any(p => p.isMe))
-                players.Append(contract.allActiveAtGameStartPlayers.First(p => p.isMe));
+                players = players.Append(contract.allActiveAtGameStartPlayers.First(p => p.isMe));
             return players.ToList();
         }
     }

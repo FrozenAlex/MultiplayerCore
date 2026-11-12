@@ -95,7 +95,27 @@ namespace MultiplayerCore.Patchers
 			}
 		}
 
-        [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.graphUrl), AffinityMethodType.Getter)]
+        private static readonly System.Net.Http.HttpClient StatusClient = new() { Timeout = TimeSpan.FromSeconds(60) };
+
+        [AffinityPrefix]
+        [AffinityPatch(typeof(MultiplayerStatusModel), "GetMultiplayerStatusAsyncInternal")]
+        private bool GetCustomStatus(ref System.Threading.Tasks.Task<MultiplayerStatusData> __result)
+        {
+            if (!IsOverridingApi) return true;
+            __result = FetchCustomStatus(MasterServerStatusUrl ?? (GraphUrl!.TrimEnd('/') + "/status"));
+            return false;
+        }
+
+        private static async System.Threading.Tasks.Task<MultiplayerStatusData> FetchCustomStatus(string url)
+        {
+            var json = await StatusClient.GetStringAsync(url);
+            var status = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.MpStatusData>(json)
+                ?? throw new InvalidOperationException("The multiplayer status response was empty.");
+            status.useGamelift = true;
+            return status;
+        }
+
+        [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.graphApiBaseUrl), AffinityMethodType.Getter)]
         private void GetGraphUrl(ref string __result)
         {
             if (!IsOverridingApi)
@@ -104,24 +124,10 @@ namespace MultiplayerCore.Patchers
             __result = GraphUrl!;
         }
 
-        [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.multiplayerStatusUrl),
-            AffinityMethodType.Getter)]
-        private void GetMasterServerStatusUrl(ref string __result)
-        {
-            if (MasterServerStatusUrl == null)
-                return;
-
-            __result = MasterServerStatusUrl!;
-        }
-
         [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.maxPartySize), AffinityMethodType.Getter)]
         private void GetMaxPartySize(ref int __result)
         {
-            if (MaxPartySize == null)
-            {
-                __result = OfficialMaxPartySize;
-                return;
-            }
+            if (MaxPartySize == null) return;
 
             __result = MaxPartySize.Value;
         }
@@ -162,11 +168,11 @@ namespace MultiplayerCore.Patchers
             __result = MultiplayerPort.Value;
         }
 
-        [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.forceGameLift), AffinityMethodType.Getter)]
-        private void GetForceGameLift(ref bool __result)
+        [AffinityPatch(typeof(NetworkConfigSO), nameof(NetworkConfigSO.useLocalServer), AffinityMethodType.Getter)]
+        private void GetUseLocalServer(ref bool __result)
         {
             // If we're overriding the API, the game should always use GameLift connection manager flow
-            __result = !IsOverridingApi;
+            if (IsOverridingApi) __result = false;
         }
 
         [AffinityPrefix]

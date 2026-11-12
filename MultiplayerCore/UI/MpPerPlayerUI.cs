@@ -255,10 +255,10 @@ namespace MultiplayerCore.UI
 					if (levelTask.IsCompleted && !levelTask.IsFaulted && levelTask.Result != null)
 					{
 						var level = levelTask.Result;
-						_logger.Debug($"Got level {level.LevelHash}, {level.Requirements}, {level.Requirements[beatmapKey.beatmapCharacteristic.serializedName]}");
+						_logger.Debug($"Got level {level.LevelHash}, {level.Requirements}, {level.Requirements[beatmapKey.characteristic.SerializedName()]}");
 						// Hacky we use requirements to get the available difficulties
-						if (level.Requirements[beatmapKey.beatmapCharacteristic.serializedName].Count > 0)
-							UpdateDifficultyList(level.Requirements[beatmapKey.beatmapCharacteristic.serializedName].Keys
+						if (level.Requirements[beatmapKey.characteristic.SerializedName()].Count > 0)
+							UpdateDifficultyList(level.Requirements[beatmapKey.characteristic.SerializedName()].Keys
 								.ToList());
 						else
 						{
@@ -267,8 +267,8 @@ namespace MultiplayerCore.UI
 							//level = _beatmapLevelProvider.TryGetBeatmapFromPacketHash(levelHash);
 							var packet = _playersDataModel.FindLevelPacket(levelHash);
 							level = packet != null ? _beatmapLevelProvider.GetBeatmapFromPacket(packet) : null;
-							if (level != null && level.Requirements[beatmapKey.beatmapCharacteristic.serializedName].Count > 0)
-								UpdateDifficultyList(level.Requirements[beatmapKey.beatmapCharacteristic.serializedName].Keys
+							if (level != null && level.Requirements[beatmapKey.characteristic.SerializedName()].Count > 0)
+								UpdateDifficultyList(level.Requirements[beatmapKey.characteristic.SerializedName()].Keys
 									.ToList());
 							else
 							{
@@ -284,7 +284,7 @@ namespace MultiplayerCore.UI
 			{
 				_logger.Debug($"LevelId not custom: {beatmapKey.levelId}, getting difficulties from basegame");
 				var diffList = _beatmapLevelsModel.GetBeatmapLevel(beatmapKey.levelId)
-					?.GetDifficulties(beatmapKey.beatmapCharacteristic).ToList();
+					?.GetDifficulties(beatmapKey.gameplayType, beatmapKey.characteristic).ToList();
 				if (diffList != null) UpdateDifficultyList(diffList);
 			}
 
@@ -409,7 +409,7 @@ namespace MultiplayerCore.UI
 		private void LocalSelectedBeatmap(LevelSelectionFlowCoordinator.State state)
 		{
 			_currentBeatmapKey = state.beatmapKey;
-			UpdateDifficultyList(state.beatmapLevel.GetDifficulties(state.beatmapKey.beatmapCharacteristic).ToList());
+			UpdateDifficultyList(state.beatmapLevel.GetDifficulties(state.beatmapKey.gameplayType, state.beatmapKey.characteristic).ToList());
 		}
 
 		private void ClearLocalSelectedBeatmap()
@@ -458,8 +458,8 @@ namespace MultiplayerCore.UI
 			_logger.Debug($"Selected difficulty at {index} - {diff}");
 			if (Enum.TryParse(diff.Replace("Expert+", "ExpertPlus"), out BeatmapDifficulty difficulty))
 			{
-				_currentBeatmapKey = new BeatmapKey(_currentBeatmapKey.levelId,
-					_currentBeatmapKey.beatmapCharacteristic, difficulty);
+				_currentBeatmapKey = new BeatmapKey(_currentBeatmapKey.levelId, _currentBeatmapKey.gameplayType,
+					_currentBeatmapKey.characteristic, difficulty);
 				_gameServerLobbyFlowCoordinator._lobbyPlayersDataModel.SetLocalPlayerBeatmapLevel(_currentBeatmapKey);
 			}
 		}

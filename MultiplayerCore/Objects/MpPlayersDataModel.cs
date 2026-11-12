@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -80,10 +79,10 @@ namespace MultiplayerCore.Objects
             _logger.Debug($"'{player.userId}' selected song '{packet.levelHash}'.");
             
             var beatmap = _beatmapLevelProvider.GetBeatmapFromPacket(packet);
-            var characteristic = _beatmapCharacteristicCollection.GetBeatmapCharacteristicBySerializedName(packet.characteristicName);
+            if (!BeatmapCharacteristicExtensions.BeatmapCharacteristicFromSerializedName(packet.characteristicName, out var characteristic)) return;
 
             PutPlayerPacket(player.userId, packet);
-            base.SetPlayerBeatmapLevel(player.userId, new BeatmapKey(beatmap.LevelID, characteristic, packet.difficulty));
+            base.SetPlayerBeatmapLevel(player.userId, new BeatmapKey(beatmap.LevelID, GameplayType.BeatSaber, characteristic, packet.difficulty));
         }
 
         private new void HandleMenuRpcManagerGetRecommendedBeatmap(string userId)

@@ -28,13 +28,13 @@ namespace MultiplayerCore.Patches
             {
                 if (codes[i].Calls(_getActivePlayersMethod))
                 {
-                    codes[i] = new CodeInstruction(OpCodes.Callvirt, SymbolExtensions.GetMethodInfo(() => GetActivePlayersAttacher(null!)));
+                    codes[i] = new CodeInstruction(codes[i]) { opcode = OpCodes.Call, operand = SymbolExtensions.GetMethodInfo(() => GetActivePlayersAttacher(null!)) };
                 }
             }
             return codes.AsEnumerable();
         }
 
-        private static IReadOnlyList<IConnectedPlayer> GetActivePlayersAttacher(MultiplayerPlayersManager contract)
+        private static IReadOnlyList<IBeatSaberConnectedPlayer> GetActivePlayersAttacher(MultiplayerPlayersManager contract)
         {
             return contract.allActiveAtGameStartPlayers.Take(4).ToList();
         }

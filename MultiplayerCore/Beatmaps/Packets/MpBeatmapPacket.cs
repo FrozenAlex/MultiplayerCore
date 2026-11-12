@@ -35,7 +35,7 @@ namespace MultiplayerCore.Beatmaps.Packets
             levelAuthorName = beatmap.LevelAuthorName;
             beatsPerMinute = beatmap.BeatsPerMinute;
             songDuration = beatmap.SongDuration;
-            characteristicName = beatmapKey.beatmapCharacteristic.serializedName;
+            characteristicName = beatmapKey.characteristic.SerializedName();
             difficulty = beatmapKey.difficulty;
             if (beatmap.Requirements.TryGetValue(characteristicName, out var requirementSet))
                 requirements = requirementSet;

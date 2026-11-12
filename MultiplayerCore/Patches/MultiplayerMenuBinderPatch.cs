@@ -24,7 +24,7 @@ namespace MultiplayerCore.Patches
             {
                 if (codes[i].opcode == OpCodes.Callvirt && codes[i].Calls(_levelLoaderMethod))
                 {
-                    CodeInstruction newCode = new CodeInstruction(OpCodes.Callvirt, _levelLoaderAttacher);
+                    CodeInstruction newCode = new CodeInstruction(codes[i]) { opcode = OpCodes.Call, operand = _levelLoaderAttacher };
                     codes[i] = newCode;
                 }
             }

@@ -82,9 +82,9 @@ namespace MultiplayerCore.Patchers
 		        instance._levelBar.hide = false;
 
 
-		        Plugin.Logger.Debug($"Calling Setup with level type: {level.GetType().Name}, beatmapCharacteristic type: {key.beatmapCharacteristic.GetType().Name}, difficulty type: {key.difficulty.GetType().Name} ");
+		        Plugin.Logger.Debug($"Calling Setup with level type: {level.GetType().Name}, beatmapCharacteristic type: {key.characteristic.GetType().Name}, difficulty type: {key.difficulty.GetType().Name} ");
 
-				instance._levelBar.Setup(level, key.difficulty, key.beatmapCharacteristic);
+				instance._levelBar.Setup(level, key.difficulty, key.characteristic);
 	        }
 	        else
 	        {
@@ -100,9 +100,9 @@ namespace MultiplayerCore.Patchers
     {
         public static BeatmapLevel MakeBeatmapLevel(this MpBeatmap mpBeatmap, in BeatmapKey key, IPreviewMediaData previewMediaData) 
         {
-            var dict = new Dictionary<(BeatmapCharacteristicSO, BeatmapDifficulty), BeatmapBasicData>
+            var dict = new Dictionary<(GameplayType, BeatmapCharacteristic, BeatmapDifficulty), BeatmapBasicData>
 			{
-				[(key.beatmapCharacteristic, key.difficulty)] = new BeatmapBasicData(
+				[(key.gameplayType, key.characteristic, key.difficulty)] = new BeatmapBasicData(
 				0,
 				0,
 				EnvironmentName.Empty,

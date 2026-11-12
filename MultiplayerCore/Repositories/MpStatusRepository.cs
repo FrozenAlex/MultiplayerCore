@@ -15,6 +15,7 @@ namespace MultiplayerCore.Repositories
     public class MpStatusRepository : IAffinity
     {
         private readonly INetworkConfig _networkConfig;
+        private readonly Patchers.NetworkConfigPatcher _patcher;
         private readonly SiraLog _logger;
         
         private readonly Dictionary<string, MpStatusData> _statusByUrl;
@@ -22,9 +23,10 @@ namespace MultiplayerCore.Repositories
         
         public event Action<string, MpStatusData>? statusUpdatedForUrlEvent;
 
-        internal MpStatusRepository(INetworkConfig networkConfig, SiraLog logger)
+        internal MpStatusRepository(INetworkConfig networkConfig, Patchers.NetworkConfigPatcher patcher, SiraLog logger)
         {
             _networkConfig = networkConfig;
+            _patcher = patcher;
             _logger = logger;
             
             _statusByUrl = new();
@@ -35,7 +37,7 @@ namespace MultiplayerCore.Repositories
         
         internal void ReportStatus(MpStatusData statusData)
         {
-            var statusUrl =  _networkConfig.multiplayerStatusUrl;
+            var statusUrl =  _patcher.MasterServerStatusUrl ?? (_networkConfig.graphApiBaseUrl.TrimEnd('/') + "/beat_saber_multiplayer_status");
             _statusByUrl[statusUrl] = statusData;
             RaiseUpdateEvent(statusUrl, statusData);
         }

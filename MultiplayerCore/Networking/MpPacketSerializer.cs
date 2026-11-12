@@ -10,6 +10,8 @@ namespace MultiplayerCore.Networking
 {
     public class MpPacketSerializer : INetworkPacketSubSerializer<IBeatSaberConnectedPlayer>, IInitializable, IDisposable
     {
+        public INetworkPacketProcessedHandler<IBeatSaberConnectedPlayer> PacketProcessedHandler { get; set; } = null!;
+
         private const int ID = 100;
 
         private Dictionary<string, Action<NetDataReader, int, IBeatSaberConnectedPlayer>> packetHandlers = new();
@@ -67,6 +69,7 @@ namespace MultiplayerCore.Networking
                 try
                 {
                     action(reader, length, data);
+                    PacketProcessedHandler?.HandlePacketProcessed(packetId, data);
                 }
                 catch (Exception ex)
                 {

@@ -35,7 +35,8 @@ namespace MultiplayerCore.Players
         {
             _sessionManager.SetLocalPlayerState("modded", true);
             _packetSerializer.RegisterCallback<MpPlayerData>(HandlePlayerData);
-			//_sessionManager.playerConnectedEvent += HandlePlayerConnected;
+			_sessionManager.playerConnectedEvent += HandlePlayerConnected;
+            _sessionManager.playerDisconnectedEvent += HandlePlayerDisconnected;
 
             InitUserInfo();
         }
@@ -76,28 +77,31 @@ namespace MultiplayerCore.Players
 		public void Dispose()
         {
             _packetSerializer.UnregisterCallback<MpPlayerData>();
+            _sessionManager.playerConnectedEvent -= HandlePlayerConnected;
+            _sessionManager.playerDisconnectedEvent -= HandlePlayerDisconnected;
+            _playerData.Clear();
         }
 
-        //private void HandlePlayerConnected(IConnectedPlayer player)
-        //{
-	       // if (_localPlayerInfo == null) 
-		      //  throw new NullReferenceException("local player info was not yet set! make sure it is set before anything else happens!");
+        private void HandlePlayerConnected(IBeatSaberConnectedPlayer player)
+        {
+            _sessionManager.SendToPlayer(new MpPlayerData
+            {
+                Platform = _localPlayerInfo.platform switch {
+                    UserInfo.Platform.Oculus => Platform.OculusPC,
+                    UserInfo.Platform.Steam => Platform.Steam,
+                    _ => Platform.Unknown
+                },
+                PlatformId = _localPlayerInfo.platformUserId
+            }, player);
+        }
 
-        //    _sessionManager.Send(new MpPlayerData
-        //    {
-        //        Platform = _localPlayerInfo.platform switch
-        //        {
-        //            UserInfo.Platform.Oculus => Platform.OculusPC,
-        //            UserInfo.Platform.Steam => Platform.Steam,
-        //            _ => Platform.Unknown
-        //        },
-        //        PlatformId = _localPlayerInfo.platformUserId
-        //    });
-        //}
+        private void HandlePlayerDisconnected(IBeatSaberConnectedPlayer player)
+            => _playerData.TryRemove(player.userId, out _);
 
         private void HandlePlayerData(MpPlayerData packet, IConnectedPlayer player)
         {
             _playerData[player.userId] = packet;
+            PlayerConnectedEvent?.Invoke(player, packet);
         }
 
         public bool TryGetPlayer(string userId, out MpPlayerData player)

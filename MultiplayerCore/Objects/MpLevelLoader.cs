@@ -70,7 +70,7 @@ namespace MultiplayerCore.Objects
                 return;
 
             var difficulty = _gameplaySetupData.beatmapKey.difficulty;
-            var characteristicName = _gameplaySetupData.beatmapKey.beatmapCharacteristic.serializedName;
+            var characteristicName = _gameplaySetupData.beatmapKey.characteristic.SerializedName();
 
             var difficultyData = SongData._difficulties.FirstOrDefault(x =>
                 x._difficulty == difficulty && x._beatmapCharacteristicName == characteristicName);

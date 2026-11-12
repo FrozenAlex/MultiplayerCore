@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <DisableCopyToGame Condition="'$(InstallToGame)' != 'true'">true</DisableCopyToGame>
     <OutputType>Library</OutputType>
+    <BSMTProjectType>BSIPA</BSMTProjectType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>MultiplayerCore</AssemblyName>
-    <AssemblyVersion>1.6.3</AssemblyVersion>
-    <TargetFramework>net472</TargetFramework>
+    <AssemblyVersion>1.6.8</AssemblyVersion>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <LocalRefsDir Condition="Exists('..\Refs')">..\Refs</LocalRefsDir>
-    <BeatSaberDir>$(LocalRefsDir)</BeatSaberDir>
+    <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">$(LocalRefsDir)</BeatSaberDir>
+    <ModRefsDir Condition="'$(ModRefsDir)' == ''">$(BeatSaberDir)</ModRefsDir>
+    <DisableCopyToPlugins Condition="'$(DisableCopyToPlugins)' == ''">true</DisableCopyToPlugins>
     <!--<PathMap>$(AppOutputBase)=X:\$(AssemblyName)\</PathMap>-->
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -46,6 +50,8 @@
     <None Remove="UI\RequirementsUI.bsml" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.Net.Http"><HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Net.Http.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="OculusStudios.MetaNetworking.Utils"><HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\OculusStudios.MetaNetworking.Utils.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="BeatSaber.Multiplayer.Core" Publicize="true">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BeatSaber.Multiplayer.Core.dll</HintPath>
       <Private>False</Private>
@@ -56,51 +62,10 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="netstandard" />
-    <Reference Include="Microsoft.CSharp">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Microsoft.CSharp.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="mscorlib">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\mscorlib.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
     <Reference Include="OculusStudios.Platform.Core" Publicize="true">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\OculusStudios.Platform.Core.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="System">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="System.Core">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Core.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Xml.Linq.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Data.DataSetExtensions.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="System.Data">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Data.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
-    </Reference>
-    <Reference Include="System.Xml">
-      <!--<HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\System.Xml.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>-->
     </Reference>
     <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2">
       <PrivateAssets>all</PrivateAssets>
@@ -147,7 +112,7 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="BSML">
-      <HintPath>$(BeatSaberDir)\Plugins\BSML.dll</HintPath>
+      <HintPath>$(ModRefsDir)\Plugins\BSML.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
@@ -176,22 +141,12 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\HMRendering.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Interactable">
-      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Interactable.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
     <Reference Include="LiteNetLib">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\LiteNetLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MenuSystem">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\MenuSystem.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="netstandard">
-      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\netstandard.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
@@ -210,12 +165,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="SongCore">
-      <HintPath>$(BeatSaberDir)\Plugins\SongCore.dll</HintPath>
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
-    <Reference Include="System.IO.Compression">
-      <HintPath>$(BeatSaberDir)\Libs\System.IO.Compression.dll</HintPath>
+      <HintPath>$(ModRefsDir)\Plugins\SongCore.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
@@ -231,7 +181,7 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\Networking.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="PlatformUserModel">
+    <Reference Include="PlatformUserModel" Publicize="true">
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\PlatformUserModel.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -318,11 +268,11 @@
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="SiraUtil">
-      <HintPath>$(BeatSaberDir)\Plugins\SiraUtil.dll</HintPath>
+      <HintPath>$(ModRefsDir)\Plugins\SiraUtil.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SongCore">
-      <HintPath>$(BeatSaberDir)\Plugins\SongCore.dll</HintPath>
+      <HintPath>$(ModRefsDir)\Plugins\SongCore.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>

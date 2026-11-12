@@ -26,7 +26,7 @@ namespace MultiplayerCore.Patches
                 {
                     if (codes[i].Calls(_playersDataModelMethod))
                     {
-                        CodeInstruction newCode = new CodeInstruction(OpCodes.Callvirt, _playersDataModelAttacher);
+                        CodeInstruction newCode = new CodeInstruction(codes[i]) { opcode = OpCodes.Call, operand = _playersDataModelAttacher };
                         codes[i] = newCode;
                     }
                 }

@@ -54,7 +54,7 @@ namespace MultiplayerCore.Patchers
         private static IEnumerable<CodeInstruction> CreateServerFormData(IEnumerable<CodeInstruction> instructions)
         {
             var codes = instructions.ToList();
-            for (int i = 0; i < codes.Count; i++)
+            for (int i = 0; i + 2 < codes.Count; i++)
             {
                 if (codes[i].opcode == OpCodes.Ldc_R4 && codes[i + 1].opcode == OpCodes.Ldc_R4)
                 {
@@ -88,15 +88,13 @@ namespace MultiplayerCore.Patchers
         }
 
 
-        [AffinityTranspiler]
+        [AffinityPrefix]
         [AffinityPatch(typeof(MultiplayerPlayerPlacement), nameof(MultiplayerPlayerPlacement.GetAngleBetweenPlayersWithEvenAdjustment))]
-        private IEnumerable<CodeInstruction> PlayerPlacementAngle(IEnumerable<CodeInstruction> instructions)
+        private bool PlayerPlacementAngle(int numberOfPlayers, ref float __result)
         {
-            var codes = instructions.ToList();
-            int divStartIndex = codes.FindIndex(code => code.opcode == OpCodes.Ldc_R4 && code.OperandIs(360));
-            if (!AddEmptyPlayerSlotForEvenCount && divStartIndex != -1)
-                codes.RemoveRange(0, divStartIndex);
-            return codes.AsEnumerable();
+            if (AddEmptyPlayerSlotForEvenCount || numberOfPlayers <= 0) return true;
+            __result = 360f / numberOfPlayers;
+            return false;
         }
 
         [AffinityTranspiler]
@@ -104,10 +102,10 @@ namespace MultiplayerCore.Patchers
         private IEnumerable<CodeInstruction> PlayerGameplayLayout(IEnumerable<CodeInstruction> instructions)
         {
             var codes = instructions.ToList();
-            for (int i = 0; i < codes.Count; i++)
+            for (int i = 0; i + 2 < codes.Count; i++)
             {
                 if (!AddEmptyPlayerSlotForEvenCount && codes[i].opcode == OpCodes.Ldc_I4_1 && codes[i + 1].opcode == OpCodes.Add)
-                    codes.RemoveRange(i, 2);
+                    codes[i] = new CodeInstruction(codes[i]) { opcode = OpCodes.Ldc_I4_0 };
             }
             return codes.AsEnumerable();
         }

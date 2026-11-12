@@ -1,6 +1,7 @@
-﻿using BGNet.Core.GameLift;
+using BGNet.Core.GameLift;
 using HarmonyLib;
 using MultiplayerCore.Objects;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,66 +10,46 @@ using Zenject;
 
 namespace MultiplayerCore.Patches
 {
-    [HarmonyPatch(typeof(MainSystemInit), nameof(MainSystemInit.InstallBindings), MethodType.Normal)]
+    [HarmonyPatch(typeof(MainSystemInit), nameof(MainSystemInit.InstallBindings))]
     internal class MainSystemBinderPatch
     {
-        private static readonly MethodInfo _rootMethod = typeof(FromBinder).GetMethod(nameof(FromBinder.FromComponentInNewPrefab), new[] { typeof(UnityEngine.Object) });
+        private static readonly MethodInfo FromPrefab = AccessTools.Method(typeof(FromBinder),
+            nameof(FromBinder.FromComponentInNewPrefab), new[] { typeof(UnityEngine.Object) });
+        private static readonly FieldInfo EntitlementPrefab = AccessTools.Field(typeof(MainSystemInit), "_networkPlayerEntitlementCheckerPrefab");
+        private static readonly MethodInfo ToSession = typeof(ConcreteBinderNonGeneric).GetMethods()
+            .Single(m => m.Name == "To" && m.IsGenericMethodDefinition && m.GetGenericArguments().Length == 1 && m.GetParameters().Length == 0)
+            .MakeGenericMethod(typeof(GameLiftPlayerSessionProvider));
 
-        private static readonly MethodInfo _entitlementCheckerAttacher = SymbolExtensions.GetMethodInfo(() => EntitlementCheckerAttacher(null!, null!));
-        private static readonly FieldInfo _entitlementCheckerPrefab = typeof(MainSystemInit).GetField("_networkPlayerEntitlementCheckerPrefab", BindingFlags.NonPublic | BindingFlags.Instance);
-
-
-		private static readonly MethodInfo _bindTypes = typeof(DiContainer).GetMethod(nameof(DiContainer.Bind), new[] { typeof(System.Type[]) });
-		private static readonly MethodInfo _toSessionProvider = typeof(ConcreteBinderNonGeneric).GetMethods()
-	        .First(m => m.Name == "To" && m.IsGenericMethodDefinition).MakeGenericMethod(new[] { typeof(GameLiftPlayerSessionProvider) });
-		private static readonly MethodInfo _sessionProviderAttacher = SymbolExtensions.GetMethodInfo(() => PlayerSessionProviderAttacher(null!));
-
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             var codes = instructions.ToList();
+            int entitlementMatches = 0, sessionMatches = 0;
             for (int i = 0; i < codes.Count; i++)
             {
-				Plugin.Logger.Trace($"Instruction at index {i}: {codes[i].opcode}");
-				if (codes[i].opcode == OpCodes.Ldfld && codes[i].OperandIs(_entitlementCheckerPrefab))
+                MethodInfo? replacement = null;
+                if (codes[i].Calls(ToSession))
                 {
-					Plugin.Logger.Trace($"Ldfld: {codes[i].operand}");
-					if (codes[i + 1].opcode == OpCodes.Callvirt && codes[i + 1].Calls(_rootMethod))
-                    {
-						Plugin.Logger.Trace($"Callvirt method: {codes[i + 1].operand}");
-						Plugin.Logger.Trace("Patched EntitlementChecker prefab");
-                        CodeInstruction newCode = new CodeInstruction(OpCodes.Callvirt, _entitlementCheckerAttacher);
-                        codes[i + 1] = newCode;
-                    }
-                } else if ((i + 2) < codes.Count && codes[i].opcode == OpCodes.Stelem_Ref)
+                    replacement = AccessTools.Method(typeof(MainSystemBinderPatch), nameof(BindSessionProvider));
+                    sessionMatches++;
+                }
+                else if (i > 0 && codes[i].Calls(FromPrefab) && codes[i - 1].LoadsField(EntitlementPrefab))
                 {
-                    if (codes[i + 1].opcode == OpCodes.Callvirt && codes[i + 1].Calls(_bindTypes))
-                    {
-						Plugin.Logger.Trace($"Callvirt 1 method: {codes[i + 1].operand}");
-						if (codes[i + 2].opcode == OpCodes.Callvirt && codes[i + 2].Calls(_toSessionProvider))
-						{
-							Plugin.Logger.Trace($"Callvirt 2 method: {codes[i + 2].operand}");
-							Plugin.Logger.Trace("Patched IGameLiftPlayerSessionProvider");
-							CodeInstruction replaceCode = new CodeInstruction(OpCodes.Callvirt, _sessionProviderAttacher);
-							codes[i + 2] = replaceCode;
-						}
-					}
-				} else if (codes[i].opcode == OpCodes.Callvirt)
-                {
-					Plugin.Logger.Trace($"Callvirt method: {codes[i].operand}");
-				}
-			}
-
-            return codes.AsEnumerable();
+                    replacement = AccessTools.Method(typeof(MainSystemBinderPatch), nameof(BindEntitlementChecker));
+                    entitlementMatches++;
+                }
+                if (replacement != null)
+                    codes[i] = new CodeInstruction(codes[i]) { opcode = OpCodes.Call, operand = replacement };
+            }
+            if (entitlementMatches != 1 || sessionMatches != 1)
+                throw new InvalidOperationException($"Unsupported multiplayer bindings: entitlement={entitlementMatches}, session={sessionMatches}");
+            return codes;
         }
 
-        private static ScopeConcreteIdArgConditionCopyNonLazyBinder EntitlementCheckerAttacher(ConcreteIdBinderGeneric<NetworkPlayerEntitlementChecker> contract, UnityEngine.Object prefab)
-        {
-            return contract.To<MpEntitlementChecker>().FromNewComponentOnRoot();
-        }
+        private static ScopeConcreteIdArgConditionCopyNonLazyBinder BindEntitlementChecker(
+            ConcreteIdBinderGeneric<NetworkPlayerEntitlementChecker> contract, UnityEngine.Object prefab)
+            => contract.To<MpEntitlementChecker>().FromNewComponentOnRoot();
 
-        private static FromBinderGeneric<CustomPlayerSessionProvider> PlayerSessionProviderAttacher(ConcreteBinderGeneric<GameLiftPlayerSessionProvider> contract)
-        {
-           return contract.To<CustomPlayerSessionProvider>();
-        }
-	}
+        private static FromBinderNonGeneric BindSessionProvider(ConcreteBinderNonGeneric contract)
+            => contract.To<CustomPlayerSessionProvider>();
+    }
 }

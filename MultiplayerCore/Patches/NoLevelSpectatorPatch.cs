@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using BGLib.Polyglot;
 using HarmonyLib;
 using IPA.Utilities;
@@ -52,22 +53,22 @@ namespace MultiplayerCore.Patches
 				__instance.StopListeningToGameStart(); // Ensure we stop listening for the start event while we run our start task
 				levelTask.ContinueWith(beatmapTask =>
 				{
-					if (__instance.countdownStarted) return;  // Another countdown has started, don't start the level
+					if (__instance == null || __instance.countdownStarted) return;  // Another countdown has started, don't start the level
 
-					BeatmapLevel? beatmapLevel = beatmapTask.Result?.MakeBeatmapLevel(gameplaySetupData.beatmapKey,
+					BeatmapLevel? beatmapLevel = (beatmapTask.Status == TaskStatus.RanToCompletion ? beatmapTask.Result : null)?.MakeBeatmapLevel(gameplaySetupData.beatmapKey,
 						_mpBeatmapLevelProvider.MakeBeatSaverPreviewMediaData(levelHash!));
 					if (beatmapLevel == null)
 						beatmapLevel = new NoInfoBeatmapLevel(levelHash!).MakeBeatmapLevel(gameplaySetupData.beatmapKey,
 							_mpBeatmapLevelProvider.MakeBeatSaverPreviewMediaData(levelHash!));
 
-					__instance._menuTransitionsHelper.StartMultiplayerLevel("Multiplayer", gameplaySetupData.beatmapKey, beatmapLevel, beatmapLevelData,
+					__instance._menuTransitionsHelper.StartMultiplayerLevel(GameMode.Multiplayer, gameplaySetupData.beatmapKey, beatmapLevel, beatmapLevelData,
 						__instance._playerDataModel.playerData.colorSchemesSettings.GetOverrideColorScheme(), gameplaySetupData.gameplayModifiers,
 						__instance._playerDataModel.playerData.playerSpecificSettings, __instance._environmentsListModel, null, Localization.Get("BUTTON_MENU"), false,
 						beforeSceneSwitchCallback,
 						__instance.HandleMultiplayerLevelDidFinish,
 						__instance.HandleMultiplayerLevelDidDisconnect
 					);
-				});
+				}, CancellationToken.None, TaskContinuationOptions.None, IPA.Utilities.Async.UnityMainThreadTaskScheduler.Factory.Scheduler!);
 				return false;
 			}
 			Plugin.Logger.Debug("LevelData present running orig");
@@ -91,8 +92,8 @@ namespace MultiplayerCore.Patches
 						.MakeBeatmapLevel(beatmapKey, NoLevelSpectatorPatch._mpBeatmapLevelProvider.MakeBeatSaverPreviewMediaData(hash!));
 					if (beatmapLevel == null)
 						beatmapLevel = new NoInfoBeatmapLevel(hash!).MakeBeatmapLevel(beatmapKey, NoLevelSpectatorPatch._mpBeatmapLevelProvider.MakeBeatSaverPreviewMediaData(hash!));
-					Plugin.Logger.Trace($"Calling Setup with level type: {beatmapLevel.GetType().Name}, beatmapCharacteristic type: {beatmapKey.beatmapCharacteristic.GetType().Name}, difficulty type: {beatmapKey.difficulty.GetType().Name} ");
-					__instance._levelBar.Setup(beatmapLevel, beatmapKey.difficulty, beatmapKey.beatmapCharacteristic);
+					Plugin.Logger.Trace($"Calling Setup with level type: {beatmapLevel.GetType().Name}, beatmapCharacteristic type: {beatmapKey.characteristic.GetType().Name}, difficulty type: {beatmapKey.difficulty.GetType().Name} ");
+					__instance._levelBar.Setup(beatmapLevel, beatmapKey.difficulty, beatmapKey.characteristic);
 				});
 			}
 		}

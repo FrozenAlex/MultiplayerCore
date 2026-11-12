@@ -76,7 +76,7 @@ namespace MultiplayerCore.Patchers
 					Plugin.Logger.Debug($"Will display level text? {displayLevelText}");
 				}
 
-				instance._suggestedCharacteristicIcon.sprite = key.beatmapCharacteristic.icon;
+				instance._suggestedCharacteristicIcon.sprite = instance._beatmapCharacteristicCollection.GetBeatmapCharacteristicIcon(key.characteristic);
 				instance._suggestedDifficultyText.text = key.difficulty.ShortName();
 			} else Plugin.Logger.Debug("Player key was not valid, disabling");
 			SetLevelFoundValues(instance, displayLevelText);
@@ -96,7 +96,6 @@ namespace MultiplayerCore.Patchers
 
 			instance._useModifiersButton.interactable = !connectedPlayer.isMe && anyModifiers && allowSelection;
 			instance._kickPlayerButton.interactable = !connectedPlayer.isMe && hasKickPermissions && allowSelection;
-			instance._mutePlayerButton.gameObject.SetActive(false);
 			if (getLevelEntitlementTask != null && !connectedPlayer.isMe)
 			{
 				instance._useBeatmapButtonHoverHint.text = Localization.Get("LABEL_CANT_START_GAME_DO_NOT_OWN_SONG");

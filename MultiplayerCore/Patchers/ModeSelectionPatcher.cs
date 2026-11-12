@@ -7,20 +7,22 @@ namespace MultiplayerCore.Patchers
         private string _lastStatusUrl = string.Empty;
 
         private readonly INetworkConfig _networkConfig;
+        private readonly NetworkConfigPatcher _patcher;
 
         internal ModeSelectionPatcher(
-            INetworkConfig networkConfig)
+            INetworkConfig networkConfig, NetworkConfigPatcher patcher)
         {
             _networkConfig = networkConfig;
+            _patcher = patcher;
         }
 
         [AffinityPrefix]
         [AffinityPatch(typeof(MultiplayerStatusModel), nameof(MultiplayerStatusModel.IsAvailabilityTaskValid))]
         private bool IsAvailabilityTaskValid(ref bool __result)
         {
-            if (_networkConfig.multiplayerStatusUrl == _lastStatusUrl)
+            if ((_patcher.MasterServerStatusUrl ?? _networkConfig.graphApiBaseUrl) == _lastStatusUrl)
                 return true;
-            _lastStatusUrl = _networkConfig.multiplayerStatusUrl;
+            _lastStatusUrl = _patcher.MasterServerStatusUrl ?? _networkConfig.graphApiBaseUrl;
             __result = false;
             return false;
         }
@@ -29,9 +31,9 @@ namespace MultiplayerCore.Patchers
         [AffinityPatch(typeof(QuickPlaySetupModel), nameof(QuickPlaySetupModel.IsQuickPlaySetupTaskValid))]
         private bool IsQuickplaySetupTaskValid(ref bool __result)
         {
-            if (_networkConfig.multiplayerStatusUrl == _lastStatusUrl)
+            if ((_patcher.MasterServerStatusUrl ?? _networkConfig.graphApiBaseUrl) == _lastStatusUrl)
                 return true;
-            _lastStatusUrl = _networkConfig.multiplayerStatusUrl;
+            _lastStatusUrl = _patcher.MasterServerStatusUrl ?? _networkConfig.graphApiBaseUrl;
             __result = false;
             return false;
         }
